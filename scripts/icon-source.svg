@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!--
+    Icona sorgente dell'app (usata anche come maskable):
+    lo sfondo copre l'intero quadrato e il vinile resta dentro
+    la "safe zone" centrale (80%) richiesta dalle icone maskable.
+  -->
+  <defs>
+    <linearGradient id="label" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f2a952"/>
+      <stop offset="1" stop-color="#d1755b"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0d1021"/>
+      <stop offset="0.55" stop-color="#1a1430"/>
+      <stop offset="1" stop-color="#241a2e"/>
+    </linearGradient>
+    <radialGradient id="sheen" cx="0.32" cy="0.28" r="0.75">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.10"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="168" fill="#16161d"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#2a2a36" stroke-width="7"/>
+  <circle cx="256" cy="256" r="124" fill="none" stroke="#2a2a36" stroke-width="7"/>
+  <circle cx="256" cy="256" r="98" fill="none" stroke="#2a2a36" stroke-width="7"/>
+  <circle cx="256" cy="256" r="168" fill="url(#sheen)"/>
+  <circle cx="256" cy="256" r="62" fill="url(#label)"/>
+  <circle cx="256" cy="256" r="14" fill="#0d1021"/>
+</svg>

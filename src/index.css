@@ -1,0 +1,194 @@
+@import 'tailwindcss';
+
+/*
+  Palette semantica: i valori cambiano tra tema notte (default) e giorno.
+  Le variabili vengono poi esposte a Tailwind tramite @theme inline,
+  così le classi (es. bg-panel, text-ink) seguono il tema attivo.
+*/
+:root {
+  /* Notte: blu profondo con accenti ambra/terracotta */
+  --c-bg-1: #0d1021;
+  --c-bg-2: #1a1430;
+  --c-bg-3: #241a2e;
+  --c-panel: rgba(255, 255, 255, 0.06);
+  --c-panel-border: rgba(255, 255, 255, 0.1);
+  --c-ink: #f5ede3;
+  --c-ink-dim: #a89f94;
+  --c-amber: #f2a952;
+  --c-terra: #d1755b;
+  --c-night: #4f6db8;
+  --c-glow: rgba(242, 169, 82, 0.25);
+}
+
+.light {
+  /* Giorno: crema calda con terracotta più satura */
+  --c-bg-1: #f7ecdc;
+  --c-bg-2: #f3dcc0;
+  --c-bg-3: #eecfb8;
+  --c-panel: rgba(255, 255, 255, 0.45);
+  --c-panel-border: rgba(120, 72, 40, 0.15);
+  --c-ink: #3a2a20;
+  --c-ink-dim: #8a7562;
+  --c-amber: #c77b28;
+  --c-terra: #b65437;
+  --c-night: #3d5aa0;
+  --c-glow: rgba(199, 123, 40, 0.2);
+}
+
+@theme inline {
+  --color-bg-1: var(--c-bg-1);
+  --color-bg-2: var(--c-bg-2);
+  --color-bg-3: var(--c-bg-3);
+  --color-panel: var(--c-panel);
+  --color-panel-border: var(--c-panel-border);
+  --color-ink: var(--c-ink);
+  --color-ink-dim: var(--c-ink-dim);
+  --color-amber: var(--c-amber);
+  --color-terra: var(--c-terra);
+  --color-night: var(--c-night);
+  --color-glow: var(--c-glow);
+
+  --animate-spin-vinyl: spin-vinyl 4s linear infinite;
+}
+
+@keyframes spin-vinyl {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Gradiente di sfondo che "respira" lentamente */
+@keyframes bg-drift {
+  0% {
+    background-position: 0% 30%;
+  }
+  50% {
+    background-position: 60% 70%;
+  }
+  100% {
+    background-position: 100% 40%;
+  }
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family:
+    'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  color: var(--c-ink);
+  background: linear-gradient(
+    135deg,
+    var(--c-bg-1) 0%,
+    var(--c-bg-2) 45%,
+    var(--c-bg-3) 100%
+  );
+  background-size: 220% 220%;
+  animation: bg-drift 40s ease-in-out infinite alternate;
+  transition: color 0.6s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Pannello "vetro smerigliato" riutilizzabile */
+.glass {
+  background: var(--c-panel);
+  border: 1px solid var(--c-panel-border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+}
+
+/* --- Slider orizzontali (progress, volume musica) --- */
+input[type='range'].slider-h {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 44px; /* area touch ampia, la traccia visiva resta sottile */
+  background: transparent;
+  cursor: pointer;
+}
+input[type='range'].slider-h::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--c-panel-border);
+}
+input[type='range'].slider-h::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  margin-top: -8px;
+  border-radius: 9999px;
+  background: var(--c-amber);
+  border: 2px solid var(--c-bg-1);
+  box-shadow: 0 0 12px var(--c-glow);
+}
+input[type='range'].slider-h::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--c-panel-border);
+}
+input[type='range'].slider-h::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: var(--c-amber);
+  border: 2px solid var(--c-bg-1);
+  box-shadow: 0 0 12px var(--c-glow);
+}
+
+/* --- Slider verticali del mixer ---
+   Un input range standard ruotato di -90°: soluzione più affidabile
+   cross-browser rispetto a writing-mode/appearance:slider-vertical. */
+.slider-v-wrap {
+  width: 44px;
+  height: 132px;
+  position: relative;
+}
+.slider-v-wrap input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 132px;
+  height: 44px;
+  transform: translate(-50%, -50%) rotate(-90deg);
+  background: transparent;
+  cursor: pointer;
+}
+.slider-v-wrap input[type='range']::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--c-panel-border);
+}
+.slider-v-wrap input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 26px;
+  height: 26px;
+  margin-top: -9px;
+  border-radius: 9999px;
+  background: var(--c-terra);
+  border: 2px solid var(--c-bg-1);
+  box-shadow: 0 0 10px var(--c-glow);
+}
+.slider-v-wrap input[type='range']::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--c-panel-border);
+}
+.slider-v-wrap input[type='range']::-moz-range-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  background: var(--c-terra);
+  border: 2px solid var(--c-bg-1);
+  box-shadow: 0 0 10px var(--c-glow);
+}
