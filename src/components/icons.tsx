@@ -184,3 +184,25 @@ export function MusicNoteIcon({ className }: IconProps) {
     </svg>
   )
 }
+
+/* Icona generica "video esterno": rettangolo con triangolo di play, non il logo YouTube. */
+export function ExternalVideoIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...base}>
+      <rect x="3" y="5.5" width="18" height="13" rx="3" />
+      <path d="M10.5 9.5l5 3-5 3z" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
+export function WifiOffIcon({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden="true" {...base}>
+      <path d="M3 3l18 18" />
+      <path d="M5 9.5a13 13 0 0 1 4.5-2.6M19 9.5a13 13 0 0 0-6-3.4" />
+      <path d="M8 13a7.5 7.5 0 0 1 3.2-1.7M16 13a7.5 7.5 0 0 0-2.3-1.5" />
+      <path d="M11 16.3a3.5 3.5 0 0 1 2.4.1" />
+      <circle cx="12" cy="19.3" r="1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}

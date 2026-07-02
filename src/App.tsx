@@ -11,7 +11,14 @@ import { Mixer } from './components/Mixer'
 import { Player } from './components/Player'
 import { PlaylistManager } from './components/PlaylistManager'
 import { PomodoroTimer } from './components/PomodoroTimer'
-import { MoonIcon, SlidersIcon, SunIcon, VinylIcon } from './components/icons'
+import { YouTubePlaylist } from './components/YouTubePlaylist'
+import {
+  ExternalVideoIcon,
+  MoonIcon,
+  SlidersIcon,
+  SunIcon,
+  VinylIcon,
+} from './components/icons'
 import * as db from './db/db'
 import type { StoredTrack } from './db/db'
 
@@ -68,6 +75,7 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>('dark')
   const [mixerOpen, setMixerOpen] = useState(false)
   const [duckEnabled, setDuckEnabled] = useState(true)
+  const [youtubeOpen, setYoutubeOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null)
   const [loaded, setLoaded] = useState(false)
@@ -375,6 +383,22 @@ export default function App() {
               onDuckEnabledChange={setDuckEnabled}
             />
           </div>
+
+          {/* Sezione facoltativa e nettamente separata dal motore audio
+              dell'app: montata solo su richiesta, per non generare traffico
+              di rete verso YouTube per chi non la usa. */}
+          {youtubeOpen ? (
+            <YouTubePlaylist onClose={() => setYoutubeOpen(false)} />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setYoutubeOpen(true)}
+              className="glass flex min-h-14 w-full items-center justify-center gap-2 p-4 text-sm text-ink-dim transition hover:text-ink"
+            >
+              <ExternalVideoIcon className="size-5" />
+              Aggiungi playlist YouTube (richiede connessione)
+            </button>
+          )}
         </div>
 
         <Mixer

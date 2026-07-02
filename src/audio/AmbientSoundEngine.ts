@@ -25,7 +25,7 @@ export interface AmbientLayerInfo {
 
 export const AMBIENT_LAYERS: AmbientLayerInfo[] = [
   { id: 'rain', label: 'Pioggia' },
-  { id: 'fire', label: 'Fuoco' },
+  { id: 'fire', label: 'Braciere' },
   { id: 'cafe', label: 'Caffetteria' },
   { id: 'vinyl', label: 'Vinile' },
   { id: 'pink', label: 'Rumore rosa' },
@@ -434,16 +434,18 @@ export class AmbientSoundEngine {
   }
 
   /* ------------------------------------------------------------------ */
-  /* Layer: fuoco scoppiettante                                          */
+  /* Layer: braciere (brace, legna che scoppietta, scintille)            */
   /* ------------------------------------------------------------------ */
 
   private buildFire(out: GainNode): () => void {
-    // Rombo di base: rumore marrone passa-basso = la "massa" del fuoco.
+    // Rombo di base: rumore marrone passa-basso = la "massa" della brace.
+    // Filtro un po' più stretto di un falò aperto: un braciere è più
+    // "contenuto" (canestro metallico) e il rombo resta più raccolto.
     const roarFilter = this.ctx.createBiquadFilter()
     roarFilter.type = 'lowpass'
-    roarFilter.frequency.value = 380
+    roarFilter.frequency.value = 340
     const roarGain = this.ctx.createGain()
-    roarGain.gain.value = 0.75
+    roarGain.gain.value = 0.65
     roarFilter.connect(roarGain).connect(out)
     const stopRoar = this.loopSource(this.getBrownBuffer(), roarFilter)
 
@@ -451,26 +453,64 @@ export class AmbientSoundEngine {
     const lfo = this.ctx.createOscillator()
     lfo.frequency.value = 0.18
     const lfoDepth = this.ctx.createGain()
-    lfoDepth.gain.value = 110
+    lfoDepth.gain.value = 90
     lfo.connect(lfoDepth).connect(roarFilter.frequency)
     lfo.start()
 
-    // Scoppiettii: grani di rumore passa-banda con intervalli irregolari;
-    // ogni tanto (per il ~12% degli eventi) un pop più grave e forte.
+    // Sfrigolio: la resina/umidità nella legna che brucia — rumore bianco
+    // passa-alto molto tenue, con ampiezza modulata da due LFO a frequenze
+    // incommensurabili (somma non periodica) per un "friggere" organico.
+    const sizzleFilter = this.ctx.createBiquadFilter()
+    sizzleFilter.type = 'highpass'
+    sizzleFilter.frequency.value = 4500
+    const sizzleGain = this.ctx.createGain()
+    sizzleGain.gain.value = 0.05
+    sizzleFilter.connect(sizzleGain).connect(out)
+    const stopSizzle = this.loopSource(this.getWhiteBuffer(), sizzleFilter)
+
+    const sizzleLfo1 = this.ctx.createOscillator()
+    sizzleLfo1.frequency.value = 3.3
+    const sizzleLfo2 = this.ctx.createOscillator()
+    sizzleLfo2.frequency.value = 5.1
+    const sizzleSum = this.ctx.createGain()
+    sizzleSum.gain.value = 1
+    const sizzleDepth = this.ctx.createGain()
+    sizzleDepth.gain.value = 0.035
+    sizzleLfo1.connect(sizzleSum)
+    sizzleLfo2.connect(sizzleSum)
+    sizzleSum.connect(sizzleDepth).connect(sizzleGain.gain)
+    sizzleLfo1.start()
+    sizzleLfo2.start()
+
+    // Scoppiettii, pop dei ceppi e scintille: grani di rumore filtrati.
+    // Tre "personalità" diverse per un braciere ricco di dettagli:
+    // - big: un ceppo che cede, grave e forte;
+    // - spark: una scintilla acuta e metallica che schizza dalla brace;
+    // - normale: il crepitio diffuso di legna che brucia.
     const grain = this.getGrainBuffer()
     const scheduler = new TransientScheduler(
       this.ctx,
       (when) => {
-        const big = Math.random() < 0.12
+        const roll = Math.random()
+        const big = roll < 0.1
+        const spark = roll > 0.85
         const src = this.ctx.createBufferSource()
         src.buffer = grain
-        src.playbackRate.value = big ? rand(0.35, 0.6) : rand(0.7, 1.4)
+        src.playbackRate.value = big
+          ? rand(0.35, 0.6)
+          : spark
+            ? rand(2.2, 3.4)
+            : rand(0.7, 1.4)
         const bp = this.ctx.createBiquadFilter()
         bp.type = 'bandpass'
-        bp.frequency.value = big ? rand(500, 1100) : rand(1200, 3400)
-        bp.Q.value = rand(1.5, 4)
+        bp.frequency.value = big
+          ? rand(500, 1100)
+          : spark
+            ? rand(5000, 8500)
+            : rand(1200, 3400)
+        bp.Q.value = spark ? rand(8, 16) : rand(1.5, 4)
         const g = this.ctx.createGain()
-        g.gain.value = big ? rand(0.7, 1.2) : rand(0.15, 0.5)
+        g.gain.value = big ? rand(0.7, 1.2) : spark ? rand(0.08, 0.2) : rand(0.15, 0.5)
         src.connect(bp).connect(g).connect(out)
         src.start(when)
         src.onended = () => {
@@ -479,18 +519,53 @@ export class AmbientSoundEngine {
           g.disconnect()
         }
       },
-      () => rand(0.06, 0.55),
+      () => rand(0.05, 0.45),
     )
     scheduler.start()
 
+    // Assestamento della brace: ogni tanto un ceppo/carbone si sposta nel
+    // canestro — un tonfo grave e breve, molto più raro degli scoppiettii.
+    const settleScheduler = new TransientScheduler(
+      this.ctx,
+      (when) => {
+        const src = this.ctx.createBufferSource()
+        src.buffer = grain
+        src.playbackRate.value = rand(0.2, 0.32)
+        const lp = this.ctx.createBiquadFilter()
+        lp.type = 'lowpass'
+        lp.frequency.value = rand(180, 320)
+        const g = this.ctx.createGain()
+        g.gain.value = rand(0.5, 0.9)
+        src.connect(lp).connect(g).connect(out)
+        src.start(when)
+        src.onended = () => {
+          src.disconnect()
+          lp.disconnect()
+          g.disconnect()
+        }
+      },
+      () => rand(9, 22),
+    )
+    settleScheduler.start()
+
     return () => {
       scheduler.stop()
+      settleScheduler.stop()
       stopRoar()
+      stopSizzle()
       lfo.stop()
       lfo.disconnect()
       lfoDepth.disconnect()
+      sizzleLfo1.stop()
+      sizzleLfo2.stop()
+      sizzleLfo1.disconnect()
+      sizzleLfo2.disconnect()
+      sizzleSum.disconnect()
+      sizzleDepth.disconnect()
       roarFilter.disconnect()
       roarGain.disconnect()
+      sizzleFilter.disconnect()
+      sizzleGain.disconnect()
     }
   }
 
@@ -535,6 +610,20 @@ export class AmbientSoundEngine {
     roomFilter.connect(roomGain).connect(out)
     const stopRoom = this.loopSource(this.getBrownBuffer(), roomFilter)
 
+    // Coro di voci: più "conversazioni" sintetiche indipendenti sovrapposte
+    // al mormorio di fondo — il tipico "walla" indistinguibile di una sala
+    // piena. Ogni voce si accende/spegne a scatti simulando parole e pause.
+    const voiceStops = Array.from({ length: 5 }, () => this.buildChatterVoice(out))
+
+    // Risata occasionale: punteggia il chiacchiericcio con un breve "swell"
+    // a due-tre picchi e formanti discendenti.
+    const laughScheduler = new TransientScheduler(
+      this.ctx,
+      (when) => this.scheduleLaugh(out, when),
+      () => rand(14, 38),
+    )
+    laughScheduler.start()
+
     // Tintinnii di tazze/cucchiaini: brevi sinusoidi acute con decadimento
     // esponenziale, sparse nello stereo, a intervalli di qualche secondo.
     const scheduler = new TransientScheduler(
@@ -564,6 +653,8 @@ export class AmbientSoundEngine {
 
     return () => {
       scheduler.stop()
+      laughScheduler.stop()
+      for (const stop of voiceStops) stop()
       stopMurmur()
       stopRoom()
       freqLfo.stop()
@@ -577,5 +668,93 @@ export class AmbientSoundEngine {
       roomFilter.disconnect()
       roomGain.disconnect()
     }
+  }
+
+  /**
+   * Una singola "voce" di sottofondo: rumore rosa filtrato da una coppia di
+   * bandpass che imitano i primi due formanti vocalici (F1/F2). Un piccolo
+   * scheduler (non sample-accurate, non serve per una texture continua)
+   * fa saltare periodicamente le frequenze dei formanti e l'ampiezza tra
+   * "parlato" e "pausa", simulando il ritmo di sillabe e respiri di un
+   * discorso reale ma reso volutamente incomprensibile.
+   */
+  private buildChatterVoice(out: GainNode): () => void {
+    const formant1 = this.ctx.createBiquadFilter()
+    formant1.type = 'bandpass'
+    formant1.Q.value = rand(5, 9)
+    formant1.frequency.value = 500
+    const formant2 = this.ctx.createBiquadFilter()
+    formant2.type = 'bandpass'
+    formant2.Q.value = rand(4, 7)
+    formant2.frequency.value = 1400
+    const gain = this.ctx.createGain()
+    gain.gain.value = 0
+    const pan = this.ctx.createStereoPanner()
+    pan.pan.value = rand(-0.9, 0.9)
+
+    formant1.connect(formant2).connect(gain).connect(pan).connect(out)
+    const stopSource = this.loopSource(this.getPinkBuffer(), formant1)
+
+    let timer: ReturnType<typeof setTimeout>
+    const scheduleNext = () => {
+      const t = this.ctx.currentTime
+      if (Math.random() < 0.65) {
+        // "Sillaba": nuova coppia di formanti (F2 = multiplo di F1, come
+        // nelle vocali reali) e un breve swell di ampiezza.
+        const f1 = rand(350, 900)
+        formant1.frequency.setTargetAtTime(f1, t, 0.05)
+        formant2.frequency.setTargetAtTime(f1 * rand(2.2, 3.4), t, 0.05)
+        gain.gain.setTargetAtTime(rand(0.03, 0.09), t, 0.04)
+        timer = setTimeout(scheduleNext, rand(90, 260))
+      } else {
+        // Pausa tra una parola/frase e l'altra.
+        gain.gain.setTargetAtTime(0, t, 0.08)
+        timer = setTimeout(scheduleNext, rand(120, 500))
+      }
+    }
+    scheduleNext()
+
+    return () => {
+      clearTimeout(timer)
+      stopSource()
+      formant1.disconnect()
+      formant2.disconnect()
+      gain.disconnect()
+      pan.disconnect()
+    }
+  }
+
+  /** Breve risata sintetizzata: 2-3 "colpi" di rumore con formanti discendenti. */
+  private scheduleLaugh(out: GainNode, when: number): void {
+    const pan = this.ctx.createStereoPanner()
+    pan.pan.value = rand(-0.7, 0.7)
+    pan.connect(out)
+
+    const humps = Math.random() < 0.4 ? 3 : 2
+    let t = when
+    for (let i = 0; i < humps; i++) {
+      const src = this.ctx.createBufferSource()
+      src.buffer = this.getPinkBuffer()
+      src.loop = true
+      const bp = this.ctx.createBiquadFilter()
+      bp.type = 'bandpass'
+      bp.Q.value = 3
+      bp.frequency.setValueAtTime(rand(500, 750), t)
+      bp.frequency.linearRampToValueAtTime(rand(280, 400), t + 0.14)
+      const env = this.ctx.createGain()
+      env.gain.setValueAtTime(0, t)
+      env.gain.linearRampToValueAtTime(rand(0.05, 0.1), t + 0.02)
+      env.gain.exponentialRampToValueAtTime(0.0001, t + 0.16)
+      src.connect(bp).connect(env).connect(pan)
+      src.start(t)
+      src.stop(t + 0.2)
+      src.onended = () => {
+        src.disconnect()
+        bp.disconnect()
+        env.disconnect()
+      }
+      t += rand(0.16, 0.22)
+    }
+    setTimeout(() => pan.disconnect(), (t - when + 0.3) * 1000)
   }
 }

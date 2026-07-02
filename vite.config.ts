@@ -47,11 +47,19 @@ export default defineConfig({
         // Precache dell'intera app shell: dopo il primo caricamento
         // l'app funziona completamente offline.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        // Strategia cache-first per gli asset statici: nessuna richiesta
-        // di rete se la risorsa è già in cache.
+        // Strategia cache-first per gli asset statici della nostra origine:
+        // nessuna richiesta di rete se la risorsa è già in cache. Limitato
+        // esplicitamente a self.location.origin per non intercettare/
+        // conservare risorse di terze parti (es. player IFrame di YouTube).
         runtimeCaching: [
           {
-            urlPattern: ({ request }) =>
+            // Nota: questa funzione viene eseguita nel service worker a
+            // runtime (dove `self` è lo ServiceWorkerGlobalScope), ma
+            // vite.config.ts viene type-checked con la lib di Node, che non
+            // dichiara `self` — da qui il cast tramite globalThis.
+            urlPattern: ({ request, url }) =>
+              url.origin ===
+                (globalThis as unknown as { location: { origin: string } }).location.origin &&
               ['style', 'script', 'image', 'font'].includes(request.destination),
             handler: 'CacheFirst',
             options: {

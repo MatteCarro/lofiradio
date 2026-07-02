@@ -25,6 +25,11 @@ offline** dopo il primo caricamento.
   pannelli in vetro smerigliato, gradiente di sfondo animato.
 - **PWA installabile**: manifest completo, service worker cache-first,
   prompt "Aggiungi a schermata Home".
+- **Playlist YouTube (opzionale)**: sezione volutamente separata dal motore
+  audio, montata solo su richiesta dell'utente. Usa esclusivamente il player
+  IFrame ufficiale di YouTube (nessuna estrazione/download dell'audio):
+  richiede una connessione e non entra nel mixer/crossfade/visualizer.
+  Vedi `src/components/YouTubePlaylist.tsx`.
 
 ## Stack
 
@@ -62,13 +67,18 @@ src/
 │   ├── Mixer.tsx              # pannello collassabile con slider verticali
 │   ├── PlaylistManager.tsx    # drag&drop, elenco brani
 │   ├── PomodoroTimer.tsx      # timer 25/5 con ducking opzionale
-│   └── InstallPrompt.tsx      # bottone di installazione PWA
+│   ├── InstallPrompt.tsx      # bottone di installazione PWA
+│   └── YouTubePlaylist.tsx    # player IFrame YouTube, separato dal motore audio
 └── db/
     └── db.ts                  # IndexedDB: tracce (Blob) + preferenze
 ```
 
 ## Note su privacy e licenze
 
-L'app non incorpora stream di terze parti (YouTube, Spotify, ecc.): riproduce
-solo file locali dell'utente o audio sintetizzato al volo. Nessun dato lascia
-il dispositivo e non viene effettuata alcuna chiamata di rete non necessaria.
+Il motore audio principale (player + mixer ambientale) non incorpora stream
+di terze parti: riproduce solo file locali dell'utente o audio sintetizzato
+al volo, e non effettua chiamate di rete non necessarie. La sezione
+"Playlist YouTube" è un'eccezione esplicita e isolata, attivabile solo su
+richiesta dell'utente: usa il player ufficiale IFrame di YouTube (mai
+estrazione/download dell'audio, per rispettarne i Termini di Servizio),
+richiede una connessione e non funziona offline.
